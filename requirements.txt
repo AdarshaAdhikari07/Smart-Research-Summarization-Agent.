@@ -1,6 +1,2 @@
 streamlit
-langchain
-langchain-classic
-langchain-openai
-langchain-community
-google-search-results
+huggingface_hub
