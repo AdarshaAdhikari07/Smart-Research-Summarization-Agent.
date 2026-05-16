@@ -1,7 +1,7 @@
 import streamlit as st
 from langchain_openai import ChatOpenAI
 from langchain_community.utilities import SerpAPIWrapper
-from langchain.agents import create_agent, Tool
+from langchain_classic.agents import initialize_agent, Tool, AgentType
 
 # 1. Streamlit Page Configuration
 st.set_page_config(page_title="🤖 My First AI Agent", layout="centered")
@@ -20,7 +20,7 @@ if st.button("Initialize Agent") or "agent" in st.session_state:
     if not openai_key or not serp_key:
         st.warning("Please enter both API keys in the sidebar to proceed.")
     else:
-        # Save to session state so it persists across user inputs
+        # Save keys to session state so they persist
         if "agent" not in st.session_state:
             # Initialize the search tool
             search = SerpAPIWrapper(serpapi_api_key=serp_key)
@@ -33,12 +33,15 @@ if st.button("Initialize Agent") or "agent" in st.session_state:
                 )
             ]
             
-            # The modern way: create_agent takes the model, tools, and a system prompt directly.
-            # It natively handles the execution loop underneath!
-            st.session_state.agent = create_agent(
-                model=ChatOpenAI(temperature=0, model="gpt-4o-mini", openai_api_key=openai_key),
-                tools=tools,
-                system_prompt="You are a helpful, web-searching research assistant. Always provide structured summaries."
+            # Initialize the LLM (Brain)
+            llm = ChatOpenAI(temperature=0, model="gpt-4o-mini", openai_api_key=openai_key)
+            
+            # Initialize the Agent safely from the classic ecosystem
+            st.session_state.agent = initialize_agent(
+                tools, 
+                llm, 
+                agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, 
+                verbose=True
             )
             st.success("Agent is ready for action!")
 
@@ -49,11 +52,9 @@ if "agent" in st.session_state:
     if user_query:
         with st.spinner("🧠 Agent is thinking and searching..."):
             try:
-                # Invoke the modern agent
-                response = st.session_state.agent.invoke({"messages": [("user", user_query)]})
-                
+                # Run the agent
+                response = st.session_state.agent.run(user_query)
                 st.markdown("### 📋 Result:")
-                # Extracting the content from the agent's final message response
-                st.write(response["messages"][-1].content)
+                st.write(response)
             except Exception as e:
                 st.error(f"An error occurred: {e}")
