@@ -41,22 +41,22 @@ if hf_token:
             full_response = ""
             
             try:
-                # 'provider="auto"' dynamically matches the model with the fastest serverless partner infrastructure
-                client = InferenceClient(provider="auto", api_key=hf_token)
+                # Direct initialization bypasses auto-router conflicts seamlessly
+                client = InferenceClient(api_key=hf_token)
                 
                 # Format messages correctly for the model
                 formatted_messages = [
                     {"role": m["role"], "content": m["content"]} for m in st.session_state.messages
                 ]
                 
-                # Stream the text chunks live as they generate
+                # Stream the text chunks live as they generate using Llama-3.3-70B
                 for chunk in client.chat_completion(
-                    model="Qwen/Qwen2.5-72B-Instruct",
+                    model="meta-llama/Llama-3.3-70B-Instruct",
                     messages=formatted_messages,
                     max_tokens=1000,
                     stream=True,
                 ):
-                    # FIX: Verify the chunk contains choices before reading index 0
+                    # Verify the chunk contains choices before reading index 0
                     if chunk.choices:
                         token = chunk.choices[0].delta.content
                         if token:
